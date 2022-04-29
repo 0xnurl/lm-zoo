@@ -94,6 +94,8 @@ def get_predictions(sentences, model, sess, vocab):
 
   Yields lists of numpy arrays, one per sentence.
   """
+  print("get_predictions() started")
+
   inputs = np.zeros([BATCH_SIZE, NUM_TIMESTEPS], np.int32)
   char_ids_inputs = np.zeros([BATCH_SIZE, NUM_TIMESTEPS, vocab.max_word_length], np.int32)
 
@@ -102,6 +104,7 @@ def get_predictions(sentences, model, sess, vocab):
   target_weights = np.ones([BATCH_SIZE, NUM_TIMESTEPS], np.float32)
 
   for i, sentence in enumerate(sentences):
+    print(f"Sentence {i}...")
     sess.run(model["states_init"])
 
     # Compute token- and character-level vocabulary ID sequences
@@ -117,12 +120,13 @@ def get_predictions(sentences, model, sess, vocab):
         inputs[0, 0] = prev_word_id
         char_ids_inputs[0, 0, :] = prev_word_char_ids
 
+        print(f"Session run...")
         softmax = sess.run(model["softmax_out"],
                            feed_dict={model["inputs_in"]: inputs,
                                       model["char_inputs_in"]: char_ids_inputs,
                                       model["targets_in"]: targets,
                                       model["target_weights_in"]: target_weights})[0]
-
+        print(f"Session run done.")
         # TODO JRNN softmax distribution size is greater than the vocabulary.
         # Why is that .. ?
         # In any case, let's just truncate and renorm to the actual vocab
@@ -140,7 +144,9 @@ def get_predictions(sentences, model, sess, vocab):
 
 def get_surprisals(sentences, model, sess, vocab):
   predictions = get_predictions(sentences, model, sess, vocab)
+  print("get_predictions() ended")
   for i, (sentence, sentence_preds) in enumerate(zip(sentences, predictions)):
+    print(f"processing sentence {i}...")
     sentence_surprisals = []
     for j, (word_j, preds_j) in enumerate(zip(sentence, sentence_preds)):
       if preds_j is None:
