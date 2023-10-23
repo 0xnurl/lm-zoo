@@ -37,7 +37,7 @@ class Vocabulary(object):
     self._bos = -1
     self._eos = -1
 
-    with tf.gfile.Open(filename) as f:
+    with tf.io.gfile.GFile(filename) as f:
       idx = 0
       for line in f:
         word_name = line.strip()
@@ -228,7 +228,7 @@ class LM1BDataset(object):
       vocab: Vocabulary.
     """
     self._vocab = vocab
-    self._all_shards = tf.gfile.Glob(filepattern)
+    self._all_shards = tf.io.gfile.Glob(filepattern)
     tf.logging.info('Found %d shards at %s', len(self._all_shards), filepattern)
 
   def _load_random_shard(self):

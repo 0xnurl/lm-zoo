@@ -14,24 +14,26 @@ import h5py
 import numpy as np
 from six.moves import xrange
 import tensorflow as tf
+import tensorflow.compat.v1 as tf1
+
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 from google.protobuf import text_format
 import data_utils
 
-FLAGS = tf.flags.FLAGS
+FLAGS = tf.compat.v1.flags.FLAGS # tf.compat.v1.flags.FLAGS
 # General flags.
-tf.flags.DEFINE_string('pbtxt', '',
+tf.compat.v1.flags.DEFINE_string('pbtxt', '',
                        'GraphDef proto text file used to construct model '
                        'structure.')
-tf.flags.DEFINE_string('ckpt', '',
+tf.compat.v1.flags.DEFINE_string('ckpt', '',
                        'Checkpoint directory used to fill model values.')
-tf.flags.DEFINE_string('vocab_file', '', 'Vocabulary file.')
-tf.flags.DEFINE_string('output_file', '',
+tf.compat.v1.flags.DEFINE_string('vocab_file', '', 'Vocabulary file.')
+tf.compat.v1.flags.DEFINE_string('output_file', '',
                        'File to dump results.')
-tf.flags.DEFINE_string('input_file', '',
+tf.compat.v1.flags.DEFINE_string('input_file', '',
                         'file of sentences to be evaluated')
-tf.flags.DEFINE_string("mode", '', "One 'of 'surprisal', 'predictions'")
+tf.compat.v1.flags.DEFINE_string("mode", '', "One 'of 'surprisal', 'predictions'")
 
 # For saving demo resources, use batch size 1 and step 1.
 BATCH_SIZE = 1
@@ -50,12 +52,12 @@ def _LoadModel(gd_file, ckpt_file):
     TensorFlow session and tensors dict.
   """
   with tf.Graph().as_default():
-    with tf.gfile.GFile(gd_file, 'r') as f:
+    with tf.io.gfile.GFile(gd_file, 'r') as f:
       s = f.read()
-      gd = tf.GraphDef()
+      gd = tf.compat.v1.GraphDef()
       text_format.Merge(s, gd)
 
-    tf.logging.info('Recovering Graph %s', gd_file)
+    tf.compat.v1.logging.info('Recovering Graph %s', gd_file)
     t = {}
     [t['states_init'], t['lstm/lstm_0/control_dependency'],
      t['lstm/lstm_1/control_dependency'], t['softmax_out'], t['class_ids_out'],
@@ -77,7 +79,7 @@ def _LoadModel(gd_file, ckpt_file):
                                      'Reshape_3:0',
                                      'global_step:0'], name='')
 
-    sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
+    sess = tf1.Session(config=tf1.ConfigProto(allow_soft_placement=True))
     sess.run('save/restore_all', {'save/Const:0': ckpt_file})
     sess.run(t['states_init'])
 
@@ -94,8 +96,6 @@ def get_predictions(sentences, model, sess, vocab):
 
   Yields lists of numpy arrays, one per sentence.
   """
-  print("get_predictions() started")
-
   inputs = np.zeros([BATCH_SIZE, NUM_TIMESTEPS], np.int32)
   char_ids_inputs = np.zeros([BATCH_SIZE, NUM_TIMESTEPS, vocab.max_word_length], np.int32)
 
@@ -104,7 +104,6 @@ def get_predictions(sentences, model, sess, vocab):
   target_weights = np.ones([BATCH_SIZE, NUM_TIMESTEPS], np.float32)
 
   for i, sentence in enumerate(sentences):
-    print(f"Sentence {i}...")
     sess.run(model["states_init"])
 
     # Compute token- and character-level vocabulary ID sequences
@@ -120,13 +119,12 @@ def get_predictions(sentences, model, sess, vocab):
         inputs[0, 0] = prev_word_id
         char_ids_inputs[0, 0, :] = prev_word_char_ids
 
-        print(f"Session run...")
         softmax = sess.run(model["softmax_out"],
                            feed_dict={model["inputs_in"]: inputs,
                                       model["char_inputs_in"]: char_ids_inputs,
                                       model["targets_in"]: targets,
                                       model["target_weights_in"]: target_weights})[0]
-        print(f"Session run done.")
+
         # TODO JRNN softmax distribution size is greater than the vocabulary.
         # Why is that .. ?
         # In any case, let's just truncate and renorm to the actual vocab
@@ -144,9 +142,7 @@ def get_predictions(sentences, model, sess, vocab):
 
 def get_surprisals(sentences, model, sess, vocab):
   predictions = get_predictions(sentences, model, sess, vocab)
-  print("get_predictions() ended")
   for i, (sentence, sentence_preds) in enumerate(zip(sentences, predictions)):
-    print(f"processing sentence {i}...")
     sentence_surprisals = []
     for j, (word_j, preds_j) in enumerate(zip(sentence, sentence_preds)):
       if preds_j is None:
@@ -205,4 +201,5 @@ def main(unused_argv):
 
 
 if __name__ == '__main__':
-  tf.app.run()
+  #tf.app.run()
+  tf.compat.v1.app.run()
