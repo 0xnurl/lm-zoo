@@ -1,4 +1,4 @@
-FROM tensorflow/tensorflow:1.15.2
+FROM tensorflow/tensorflow
 
 # Root of model directory relative to build context.
 ARG MODEL_ROOT=models/JRNN
@@ -49,9 +49,9 @@ ARG COMMIT
 ARG FILES_SHA1
 
 # Prepare spec.
-COPY ${MODEL_ROOT}/spec.template.json /tmp/spec.template.json
-RUN BUILD_DATETIME="$(date)" cat /tmp/spec.template.json | \
-            sed "s/<image\.sha1>/$COMMIT/g; s/<image\.files_sha1>/${FILES_SHA1}/g; s/<image.datetime>/${BUILD_DATETIME}/g" \
-            > /opt/spec.json
+#COPY ${MODEL_ROOT}/spec.template.json /tmp/spec.template.json
+#RUN BUILD_DATETIME="$(date)" cat /tmp/spec.template.json | \
+#            sed "s/<image\.sha1>/$COMMIT/g; s/<image\.files_sha1>/${FILES_SHA1}/g; s/<image.datetime>/${BUILD_DATETIME}/g" \
+#            > /opt/spec.json
 
 WORKDIR /opt/bin
